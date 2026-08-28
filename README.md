@@ -64,3 +64,9 @@ sudo systemctl enable frn.service
 
 Once installed, the service can be modified by changing the #06 command parameters with `ENABLE`, `DISABLE`, `STATUS`, `START`, `RESTART` and `STOP`.
 To install other server/client versions, simply replace the source file link in the commands described above.
+
+---
+
+## License
+
+Released under the **The Unlicense** License. See [`LICENSE`](LICENSE) for details.
