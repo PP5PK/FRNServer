@@ -1,0 +1,99 @@
+# AlterFRN server config file
+# National names MUST be UTF-8
+# Revision 7348 - 2022-10-13
+
+[Server]
+# http://alterfrn.ucoz.ru/index/server_config/0-27#s_1
+PresentServerAddress=Brazil-FRN.dvbr.net
+PresentServerPort=10024
+ServerOwnerEMail=svrutz@gmail.com
+ServerCharsetName=ISO-8859-1
+BackupServerAddress=pp5pk.net
+BackupServerPort=10024
+ListenServerPorts=10024 20010
+DefaultNetworkName=Brazil
+IPVersion=46
+ManagerMode=FRN
+MaxTotalConnections=150
+ClientHandshakeTimeout=2
+ClientActivityTimeout=8
+MaxSpeechTime=180
+SpeechPause=2000
+ClientSessionMaxTime=0
+# ManagerInvalidPasswordScript=
+MaxWaitConnections=5
+SpeechLimit=yes
+ShortFrames=yes
+QuarantineTime=0
+MaxConnectionsPerAddress=7
+ManagerEmptyDescription=no
+ClientSessionMaxTime=1y
+DefaultCountry=Brazil
+
+[Manager]
+# https://freeradionetwork.de/
+ManagerEnabled=yes
+ManagerAddress=sysman.freeradionetwork.de
+ManagerPort=10025
+ManagerAuthEMail=svrutz@gmail.com
+ManagerAuthPassword=BGRGDDFB
+ManagerConnectTimeout=3
+ManagerActivityTimeout=8
+ManagerReconnectInterval=60
+ManagerLogErrors=yes
+ManagerLogDebug=0
+ManagerPreferIPv4=yes
+
+#[Manager2]
+# https://freeradionetwork.eu/frnprotocol.htm
+#ManagerEnabled=yes
+#ManagerAddress=sysman.freeradionetwork.eu
+#ManagerPort=10025
+#ManagerAuthEMail=svrutz@gmail.com
+#ManagerAuthPassword=BGRGDDFB
+#ManagerConnectTimeout=3
+#ManagerActivityTimeout=8
+#ManagerReconnectInterval=60
+#ManagerLogErrors=yes
+#ManagerLogDebug=0
+#ManagerPreferIPv4=yes
+
+[Manager1]
+# http://alterfrn.ucoz.ru/index/server_config/0-27#s_2
+ManagerEnabled=yes
+ManagerAddress=sysman.lpd-net.ru
+ManagerPort=10025
+ManagerAuthEMail=svrutz@gmail.com
+ManagerAuthPassword=DIPOJEXI
+ManagerConnectTimeout=3
+ManagerActivityTimeout=8
+ManagerReconnectInterval=60
+ManagerLogErrors=yes
+ManagerLogDebug=0
+ManagerPreferIPv4=yes
+
+[System]
+# http://alterfrn.ucoz.ru/index/server_config/0-27#s_3
+PidFile=frnserver.pid
+LogFile=/var/log/frnserver.log
+LogClientLevel=5
+LogExec=yes
+ListDelimiter=";"
+# DataChangeScript=
+DataDir=/usr/src/FRNServer/
+SystemCharsetName=ISO-8859-1
+
+[Command]
+# http://alterfrn.ucoz.ru/index/server_config/0-27#s_6
+CommandEnabled=yes
+CommandPort=10023
+CommandIPVersion=46
+CommandPreferIPv4=yes
+
+#[Recorder]
+#Enabled=yes
+#Dir=/home/whrebe/FRNrecorder
+#Direction=B
+#FileNameFormat=S
+#SubdirMode=YMD
+#MaxRecordTime=360
