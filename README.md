@@ -195,40 +195,365 @@ Manager[0]: Operating
 
 ### server.ini
 
-Key parameters:
+---
+
+#### Section `[Server]`
+
+**s.1.1 — `PresentServerAddress`**
+Public address (hostname or IP) announced to the FRN System Manager. The manager uses this address to probe the server and verify it is reachable.
 
 ```ini
-[Server]
-PresentServerAddress=your.domain.or.ip   # Public address announced to clients
-PresentServerPort=10024
-BackupServerAddress=your.backup.address  # Fallback address sent to clients
-BackupServerPort=10024
-ServerOwnerEMail=your@email.com
-DefaultNetworkName=Brazil                # Default room on connect
-DefaultCountry=Brazil
-ListenServerPorts=10024 20010            # Ports to listen on
-IPVersion=4                              # 4, 6 or 46
-ManagerMode=FRN                          # Server-wide manager mode
+PresentServerAddress=Brazil-FRN.dvbr.net
+```
 
+---
+
+**s.1.2 — `PresentServerPort`**
+Public port announced to the FRN System Manager for probe checks.
+
+```ini
+PresentServerPort=10024
+```
+
+---
+
+**s.1.3 — `ServerOwnerEMail`**
+Primary e-mail of the server owner. A client connecting with this e-mail and the correct password receives full server owner privileges (`AL=OWNER`). Also used as the default authentication e-mail for all `[Manager*]` sections unless overridden by `ManagerAuthEMail`.
+
+```ini
+ServerOwnerEMail=your@email.com
+```
+
+---
+
+**s.1.4 — `ServerCharsetName`**
+ANSI charset name used server-wide when sending room names to legacy clients that do not support Unicode. FRN clients with Unicode support always receive UTF-8. Each room can override this with its own `CharsetName` attribute in `networks.cfg`.
+Example for Portuguese/Latin: `ISO-8859-1`
+
+```ini
+ServerCharsetName=ISO-8859-1
+```
+
+---
+
+**s.1.5 — `BackupServerAddress`**
+Backup server address sent to FRN clients during handshake (`<BN>` field). If the client loses connection to the primary server, it automatically attempts to reconnect using this address. Requires a second independent FRNServer instance for true redundancy.
+
+```ini
+BackupServerAddress=pp5pk.net
+```
+
+---
+
+**s.1.6 — `BackupServerPort`**
+Port of the backup server sent to clients.
+
+```ini
+BackupServerPort=10024
+```
+
+---
+
+**s.1.7 — `ListenServerPorts`**
+List of TCP ports the server actually listens on for incoming client connections. Multiple ports separated by spaces. Defaults to `PresentServerPort` if not set.
+
+```ini
+ListenServerPorts=10024 20010
+```
+
+---
+
+**s.1.8 — `DefaultNetworkName`**
+Room where clients are placed if they attempt to connect to a room that does not exist on this server. Avoid setting a restricted-access room here.
+
+```ini
+DefaultNetworkName=Brazil
+```
+
+---
+
+**s.1.9 — `IPVersion`**
+IP protocol version(s) used for incoming client connections.
+Values: `4` (IPv4 only) / `6` (IPv6 only) / `46` (both) — Default: `46`
+
+```ini
+IPVersion=4
+```
+
+---
+
+**s.1.10 — `ManagerMode`**
+Server-wide authentication mode with the FRN System Manager. Each room in `networks.cfg` can override this with its own `ManagerMode` attribute.
+
+| Value | Description |
+|-------|-------------|
+| `Standalone` or `S` | No interaction with manager. Fully autonomous. Default. |
+| `Notify` or `N` | Server notifies manager but ignores negative responses. Client always allowed in. |
+| `Light` or `L` | If manager unavailable, client is allowed in. When manager recovers, client is re-checked and may be kicked. |
+| `FRN` or `F` | If manager unavailable, no clients allowed. If available, client is validated against manager response. |
+
+> Note: The server does not cache valid client passwords. The `Light` mode is the recommended alternative to caching.
+
+```ini
+ManagerMode=FRN
+```
+
+---
+
+**s.1.11 — `MaxTotalConnections`**
+Maximum total simultaneous incoming connections across the entire server.
+Default: `1000`
+
+```ini
+MaxTotalConnections=150
+```
+
+---
+
+**s.1.12 — `ClientHandshakeTimeout`**
+Time in seconds a client has to complete authentication after connecting.
+Min: 1s — Max: 20s — Default: 2s
+
+```ini
+ClientHandshakeTimeout=2
+```
+
+---
+
+**s.1.13 — `ClientActivityTimeout`**
+Time in seconds after which a client connection is dropped if the client stops responding to protocol commands (e.g. due to poor network).
+Min: 3s — Max: 30s — Default: 8s
+
+```ini
+ClientActivityTimeout=8
+```
+
+---
+
+**s.1.14 — `MaxSpeechTime`**
+Server-wide maximum duration of a single transmission in seconds. Each room can override this with its own `MaxSpeechTime` attribute.
+Min: 10s — Max: 1800s (30 min) — Default: 300s (5 min)
+
+```ini
+MaxSpeechTime=180
+```
+
+---
+
+**s.1.15 — `SpeechPause`**
+Server-wide mandatory pause in milliseconds between transmissions. Prevents back-to-back keying. Each room can override with its own `SpeechPause` attribute.
+Min: 0ms — Max: 10000ms (10s) — Default: 0ms
+
+```ini
+SpeechPause=2000
+```
+
+---
+
+**s.1.16 — `ClientSessionMaxTime`**
+Server-wide maximum duration of a client session. After this time the client is disconnected and must reconnect. Each room can override with its own `ClientSessionMaxTime` attribute.
+Default: `0` (no limit). Accepts time suffixes: `s`, `m`, `h`, `d`, `y`.
+
+```ini
+ClientSessionMaxTime=1y
+```
+
+---
+
+**s.1.17 — `ManagerInvalidPasswordScript`**
+*(Linux/Unix only)* External script executed when the FRN System Manager returns an "invalid password" error. The script can use the `register` command of the AlterFRN client to request a new password, which can then be applied via `setmanpassidx` or `dsetmanpassidx` without restarting the server. Each `[Manager*]` section can define its own `ManagerInvalidPasswordScript`.
+
+```ini
+ManagerInvalidPasswordScript=/usr/src/FRNServer/invalid_pass.sh
+```
+
+---
+
+**s.1.18 — `MaxWaitConnections`**
+Maximum number of incoming connections simultaneously queued waiting for server processing (socket `listen` backlog).
+Default: `5`
+
+```ini
+MaxWaitConnections=5
+```
+
+---
+
+**s.1.19 — `SpeechLimit`**
+Enable or disable the maximum speech time limit server-wide. Each room can override with its own `SpeechLimit` attribute.
+Values: `yes` / `no` — Default: `yes`
+
+```ini
+SpeechLimit=yes
+```
+
+---
+
+**s.1.20 — `ShortFrames`**
+Enable or disable support for short 40ms audio frames server-wide. Each room can override with its own `ShortFrames` attribute.
+Values: `yes` / `no` — Default: `yes`
+
+```ini
+ShortFrames=yes
+```
+
+---
+
+**s.1.21 — `QuarantineTime`**
+Delay in milliseconds between a client's TCP connection and its appearance in the connected clients list. Prevents flickering caused by system manager probe connections. Each room can override with its own `QuarantineTime` attribute.
+Default: `0`
+
+```ini
+QuarantineTime=0
+```
+
+---
+
+**s.1.22 — `MaxConnectionsPerAddress`**
+Maximum simultaneous connections from a single IP address.
+Default: `7`
+
+```ini
+MaxConnectionsPerAddress=7
+```
+
+---
+
+**s.1.23 — `ManagerEmptyDescription`**
+When enabled, sends an empty `Description` field to the FRN System Manager instead of the actual client description. Can also be set per `[Manager*]` section.
+Values: `yes` / `no` — Default: `no`
+
+```ini
+ManagerEmptyDescription=no
+```
+
+---
+
+#### Section `[Manager]`, `[Manager1]`, `[Manager2]`, `[Manager3]`
+
+Up to four FRN System Manager connections can be configured. `[Manager]` is index 0, `[Manager1]` is index 1, and so on.
+
+> **Important:** Connect only to **one** of `.de` or `.eu`. Since August 2024, `freeradionetwork.eu` redirects to `freeradionetwork.de` — they are equivalent. Connecting to both simultaneously is considered redundant and may result in your server being blocked.
+
+**s.2.1 — `ManagerEnabled`**
+Enable or disable this manager section.
+Values: `yes` / `no` — Default: `no`
+
+**s.2.2 — `ManagerAddress`**
+Hostname or IP of the FRN System Manager.
+Default: `sysman.lpd-net.ru`
+
+**s.2.3 — `ManagerPort`**
+Port of the FRN System Manager.
+Default: `10025`
+
+**s.2.4 — `ManagerAuthEMail`**
+E-mail used to authenticate the server with this specific manager. Defaults to `ServerOwnerEMail` if not set. A previously registered client account (e-mail + password) can be used here.
+
+**s.2.5 — `ManagerAuthPassword`**
+Password for authenticating the server with this manager. Obtained via the AlterFRN client `register` command.
+
+**s.2.6 — `ManagerInvalidPasswordScript`**
+*(Linux/Unix only)* Script to execute when this specific manager returns an "invalid password" error. Overrides the server-wide `ManagerInvalidPasswordScript` (s.1.17) for this manager only.
+
+**s.2.7 — `ManagerEmptyDescription`**
+When enabled, sends an empty description to this specific manager instead of the actual client description. Overrides the server-wide `ManagerEmptyDescription` (s.1.23) for this manager only.
+Values: `yes` / `no`
+
+```ini
 [Manager]
 ManagerEnabled=yes
 ManagerAddress=sysman.freeradionetwork.de
 ManagerPort=10025
 ManagerAuthEMail=your@email.com
 ManagerAuthPassword=YOURPASSWORD
+ManagerConnectTimeout=3
+ManagerActivityTimeout=8
 ManagerReconnectInterval=60
+ManagerLogErrors=yes
+ManagerLogDebug=0
+ManagerPreferIPv4=yes
+```
 
-[Command]
-CommandEnabled=yes                       # Required for runtime commands
-CommandPort=10023
-CommandIPVersion=4
+---
 
+#### Section `[System]`
+
+**s.3.1 — `PidFile`** *(Linux/Unix only)*
+Path to the PID file for the background daemon process.
+Default: `/var/run/frnserver.pid`
+
+**s.3.2 — `LogFile`**
+Path to the server event log file, used by the `daemon` and `run` commands.
+Default: `./frnserver.log`
+
+**s.3.3 — `LogClientLevel`**
+Level of detail for client event logging.
+
+| Value | Description |
+|-------|-------------|
+| `0` | No client events logged. |
+| `1` | Dangerous events only (empty connections, wrong protocol). |
+| `2` | Warnings and dangerous events. **Default.** |
+| `3` | Failed client connections and all above. |
+| `4` | Successful client connections and all above. |
+| `5` | All incoming connections and all above. |
+
+**s.3.4 — `LogExec`**
+Log the execution of external scripts with their command line parameters.
+Values: `yes` / `no` — Default: `no`
+
+**s.3.5 — `ListDelimiter`**
+Field delimiter used in `list` and `listnet` command output.
+Default: `;`
+
+**s.3.6 — `DataChangeScript`** *(Linux/Unix only)*
+External script called whenever any `.dat` database file changes. Receives the type of changed data and the full file path as arguments. Useful for synchronizing primary and backup server databases using the `freread*` commands.
+
+**s.3.7 — `DataDir`**
+Directory where the server stores its `.dat` database files (`notices.dat`, `mutes.dat`, `blocks.dat`, etc.).
+Default: same directory as the server binary.
+
+```ini
 [System]
+PidFile=/var/run/frnserver.pid
 LogFile=/var/log/frnserver.log
+LogClientLevel=5
+LogExec=yes
 DataDir=/usr/src/FRNServer/
 ```
 
-> **Important:** Connect only to **one** of the two FRN System Managers (`.de` or `.eu`). Since August 2024, `freeradionetwork.eu` redirects to `freeradionetwork.de` — they are equivalent. Connecting to both simultaneously is considered redundant and may result in your server being blocked.
+---
+
+#### Section `[Command]`
+
+The command channel enables runtime administration without restarting the server. It listens only on `localhost` — it is never exposed externally.
+
+**s.6.1 — `CommandEnabled`**
+Enable the command channel. Required for all `⚡` commands in this guide.
+Values: `yes` / `no` — Default: `no`
+
+**s.6.2 — `CommandPort`**
+Port for the command channel. Use different ports if running multiple server instances on the same machine.
+Default: `10023`
+
+**s.6.3 — `CommandIPVersion`**
+IP version for the command channel.
+Values: `4` / `6` / `46` — Default: `4`
+
+> **Note:** If the system does not support IPv6 (check with `journalctl -u frn.service`), use `CommandIPVersion=4` to avoid the bind error on `[::1]:10023`.
+
+**s.6.4 — `CommandPreferIPv4`**
+Prefer IPv4 for command channel connections.
+Values: `yes` / `no` — Default: `yes`
+
+```ini
+[Command]
+CommandEnabled=yes
+CommandPort=10023
+CommandIPVersion=4
+CommandPreferIPv4=yes
+```
 
 ### networks.cfg
 
@@ -238,35 +563,35 @@ Each line defines a room. Format:
 RoomName | option1=value; option2=value; option3=value
 ```
 
-Lines starting with `#` are comments. Room names must be in UTF-8.
+Lines starting with `#` are comments. Room names must be in UTF-8. Multiple attributes are separated by `;`.
 
 ---
 
 #### Complete parameter reference
 
-**n.1 — `Hidden`**
-Controls whether the room appears in the public room list sent to clients.
-Values: `yes` / `no` (default: `no`)
+**n.1 — `OwnerEMail`**
+E-mail of the room owner. A client connecting with this e-mail and the correct password receives room owner privileges. Multiple owners can be specified separated by commas (r5195+). If omitted, the server's `ServerOwnerEMail` applies.
 
 ```
-Brazil | Hidden=no
-Whrebe | Hidden=yes
+Brazil | OwnerEMail=your@email.com
+Brazil | OwnerEMail=owner1@email.com,owner2@email.com
 ```
 
 ---
 
-**n.2 — `OwnerEMail`**
-E-mail of the room owner. A client connecting with this e-mail and the correct password receives room owner privileges (`AL=OWNER` in the handshake). If omitted, the server's `ServerOwnerEMail` applies.
+**n.2 — `MaxClients`**
+Maximum number of clients simultaneously connected to this room.
+Default: `65535`
 
 ```
-Brazil | OwnerEMail=your@email.com
+Brazil | MaxClients=20
 ```
 
 ---
 
 **n.3 — `MaxSpeechTime`**
-Maximum duration of a single transmission in seconds for this room. Overrides the server-wide `MaxSpeechTime` from `server.ini`.
-Min: 10s — Max: 1800s (30 min) — Default: uses server-wide value (300s)
+Maximum duration of a single transmission in seconds. After this time, the server sends a command to the client to stop transmitting. Overrides the server-wide `MaxSpeechTime`.
+Min: 10s — Max: 1800s (30 min) — Default: 300s (5 min)
 
 ```
 Papagaio | MaxSpeechTime=60
@@ -274,27 +599,9 @@ Papagaio | MaxSpeechTime=60
 
 ---
 
-**n.4 — `ManagerMode`**
-Authentication mode with the FRN System Manager for this specific room. Overrides the server-wide `ManagerMode`.
-
-| Value | Description |
-|-------|-------------|
-| `Standalone` or `S` | No interaction with manager. Fully autonomous. |
-| `Notify` or `N` | Server notifies manager of connecting clients, but negative responses are ignored. |
-| `Light` or `L` | If manager is unavailable, client is allowed in. When manager recovers, client is checked and may be kicked. |
-| `FRN` or `F` | If manager is unavailable, no clients are allowed. If available, client is checked against manager response. |
-
-```
-FRN    | ManagerMode=F
-Brazil | ManagerMode=FRN
-Teste  | ManagerMode=Standalone
-```
-
----
-
-**n.5 — `ParrotEnable`**
-Enables parrot (echo/repeater) mode for the room. Audio received is played back to all connected clients.
-Values: `yes` / `no` (default: `no`)
+**n.4 — `ParrotEnable`**
+Enables parrot (echo/repeater) mode for the room. Audio received is recorded and played back to all connected clients.
+Values: `yes` / `no` — Default: `no`
 
 ```
 Papagaio | ParrotEnable=yes
@@ -302,9 +609,9 @@ Papagaio | ParrotEnable=yes
 
 ---
 
-**n.6 — `ParrotStartStopEnable`**
+**n.5 — `ParrotStartStopEnable`**
 Allows users to activate and deactivate parrot mode by sending the text commands `start` and `stop` in the room.
-Values: `yes` / `no` (default: `no`)
+Values: `yes` / `no` — Default: `no`
 Requires: `ParrotEnable=yes`
 
 ```
@@ -313,9 +620,19 @@ Papagaio | ParrotEnable=yes; ParrotStartStopEnable=yes
 
 ---
 
+**n.6 — `ParrotMuteEnable`**
+Allows the parrot itself to be muted (silenced) by room administrators.
+Values: `yes` / `no` — Default: `no`
+
+```
+Papagaio | ParrotEnable=yes; ParrotMuteEnable=yes
+```
+
+---
+
 **n.7 — `ParrotMaxRecordTime`**
-Maximum recording time in seconds for each parrot cycle.
-Default: uses server-wide `MaxSpeechTime`
+Maximum audio recording time in seconds for each parrot cycle.
+Default: `600s` (10 min)
 
 ```
 Papagaio | ParrotMaxRecordTime=30
@@ -323,7 +640,17 @@ Papagaio | ParrotMaxRecordTime=30
 
 ---
 
-**n.8 — `ParrotRepeatCount`**
+**n.8 — `ParrotPause`**
+Pause in milliseconds before the parrot starts playing back the recorded audio.
+Default: `2000ms` (2 seconds)
+
+```
+Papagaio | ParrotPause=1000
+```
+
+---
+
+**n.9 — `ParrotRepeatCount`**
 Number of times the parrot replays the recorded audio before accepting new input.
 Default: `1`
 
@@ -333,18 +660,8 @@ Papagaio_5x | ParrotRepeatCount=5
 
 ---
 
-**n.9 — `MaxClients`**
-Maximum number of clients simultaneously connected to this room.
-Default: no limit
-
-```
-Brazil | MaxClients=20
-```
-
----
-
 **n.10 — `CharsetName`**
-ANSI charset name for this specific room, used when sending the room name to legacy clients that do not support Unicode. Overrides the server-wide `ServerCharsetName`.
+ANSI charset name for this specific room. Used when sending the room name to legacy clients that do not support Unicode. Also used for transcoding client information in the server log and in `list`/`listnet` output. Overrides the server-wide `ServerCharsetName`.
 Example for Portuguese/Latin: `ISO-8859-1`
 
 ```
@@ -353,30 +670,38 @@ Brazil | CharsetName=ISO-8859-1
 
 ---
 
-**n.11 — `AccessInfoMode`**
-Controls when the room's welcome message (`noticeset`) is sent to connecting clients.
+**n.11 — `ManagerMode`**
+Authentication mode with the FRN System Manager for this specific room. Overrides the server-wide `ManagerMode`.
 
 | Value | Description |
 |-------|-------------|
-| `Original` | Sends the welcome message only when an access list (`rights.dat`) is active for the room. Default. |
-| `Always` | Always sends the welcome message on connection, regardless of access list. |
-| `Never` | Never sends the welcome message. |
-
-> **Important:** Set `AccessInfoMode=Always` for `noticeset` messages to work in rooms without access list restrictions.
+| `Standalone` or `S` | No interaction with manager. Fully autonomous. |
+| `Notify` or `N` | Server notifies manager but ignores negative responses. Client is always allowed in. |
+| `Light` or `L` | If manager unavailable, client is allowed in. When manager recovers, client is re-checked and may be kicked. |
+| `FRN` or `F` | If manager unavailable, no clients are allowed. If available, client is validated against manager response. |
 
 ```
-Brazil | AccessInfoMode=Always
-Teste  | AccessInfoMode=Always
+FRN    | ManagerMode=F
+Brazil | ManagerMode=FRN
+Teste  | ManagerMode=Standalone
 ```
 
 ---
 
-**n.12 — `QuarantineTime`**
-Delay in milliseconds between a client's TCP connection and its appearance in the connected clients list. Useful to avoid flickering in the client list caused by system manager probe connections.
-Default: uses server-wide `QuarantineTime` (0)
+**n.12 — `ManagersMask`**
+Bitmask that enables or disables interaction with specific FRN System Managers for this room. Uses bits 0–2 corresponding to `[Manager]`, `[Manager1]` and `[Manager2]` respectively.
+Default: `7` (all managers enabled)
+
+| Value | Managers active |
+|-------|----------------|
+| `7` | All (Manager + Manager1 + Manager2) |
+| `1` | Manager only |
+| `2` | Manager1 only |
+| `4` | Manager2 only |
+| `3` | Manager + Manager1 |
 
 ```
-Brazil | QuarantineTime=500
+Brazil | ManagersMask=1
 ```
 
 ---
@@ -391,18 +716,26 @@ Brazil | SpeechPause=1000
 
 ---
 
-**n.14 — `SpeechLimit`**
-Enable or disable the maximum speech time limit for this room. Overrides the server-wide `SpeechLimit`.
-Values: `yes` / `no` — Default: `yes`
+**n.14 — `AccessInfoMode`**
+Controls when the room's welcome message (set via `noticeset`) is sent to connecting clients.
+
+| Value | Alias | Description |
+|-------|-------|-------------|
+| `Original` | `O` or `0` | Sends welcome message only when an access list is active for the room. **Default.** |
+| `Always` | `A` or `1` | Always sends the welcome message on connection. |
+| `Never` | `N` or `2` | Never sends the welcome message. |
+
+> **Important:** Set `AccessInfoMode=Always` for `noticeset` messages to work in rooms without access list restrictions.
 
 ```
-Papagaio | SpeechLimit=yes
+Brazil | AccessInfoMode=Always
+Teste  | AccessInfoMode=Always
 ```
 
 ---
 
 **n.15 — `ClientSessionMaxTime`**
-Maximum duration of a client session in seconds before the client is disconnected and must reconnect. Overrides the server-wide `ClientSessionMaxTime`.
+Maximum duration of a client session before the client is disconnected and must reconnect. Overrides the server-wide `ClientSessionMaxTime`.
 Default: `0` (no limit). Accepts time suffixes: `s` (seconds), `m` (minutes), `h` (hours), `d` (days), `y` (years).
 
 ```
@@ -412,12 +745,42 @@ Teste  | ClientSessionMaxTime=0
 
 ---
 
-**n.16 — `ShortFrames`**
+**n.16 — `SpeechLimit`**
+Enable or disable the maximum speech time limit for this room. Overrides the server-wide `SpeechLimit`.
+Values: `yes` / `no` — Default: uses server-wide value (`yes`)
+
+```
+Papagaio | SpeechLimit=yes
+```
+
+---
+
+**n.17 — `ShortFrames`**
 Enable or disable support for short 40ms audio frames in this room. Overrides the server-wide `ShortFrames`.
-Values: `yes` / `no` — Default: `yes`
+Values: `yes` / `no` — Default: uses server-wide value (`yes`)
 
 ```
 Brazil | ShortFrames=yes
+```
+
+---
+
+**n.18 — `QuarantineTime`**
+Delay in milliseconds between a client's TCP connection and its appearance in the connected clients list. Useful to avoid flickering caused by system manager probe connections. Overrides the server-wide `QuarantineTime`.
+Default: uses server-wide value (0)
+
+```
+Brazil | QuarantineTime=500
+```
+
+---
+
+**n.19 — `Hidden`**
+Controls whether the room appears in the public room list sent to clients. Clients must know the exact room name to connect to a hidden room. To also hide the room from the FRN System Manager server listing, combine with `ManagerMode=Standalone`.
+Values: `yes` / `no` — Default: `no`
+
+```
+Whrebe | Hidden=yes; ManagerMode=Standalone
 ```
 
 ---
@@ -427,16 +790,16 @@ Brazil | ShortFrames=yes
 ```
 # National names MUST be UTF-8
 
-Brazil     | Hidden=no; OwnerEMail=your@email.com; AccessInfoMode=Always
-Teste      | Hidden=yes; OwnerEMail=your@email.com; ManagerMode=F; AccessInfoMode=Always
-FRN        | Hidden=no; ManagerMode=F; AccessInfoMode=Always
-XLXBRA     | Hidden=no; ManagerMode=F; AccessInfoMode=Always
-Whrebe     | Hidden=yes; ManagerMode=F; OwnerEMail=your@email.com
-Papagaio   | Hidden=no; ManagerMode=F; ParrotEnable=yes; ParrotStartStopEnable=yes; ParrotMaxRecordTime=30; MaxSpeechTime=60
+Brazil      | Hidden=no; OwnerEMail=your@email.com; AccessInfoMode=Always
+Teste       | Hidden=yes; OwnerEMail=your@email.com; ManagerMode=F; AccessInfoMode=Always
+FRN         | Hidden=no; ManagerMode=F; AccessInfoMode=Always
+XLXBRA      | Hidden=no; ManagerMode=F; AccessInfoMode=Always
+Whrebe      | Hidden=yes; ManagerMode=Standalone; OwnerEMail=your@email.com
+Papagaio    | Hidden=no; ManagerMode=F; ParrotEnable=yes; ParrotStartStopEnable=yes; ParrotMaxRecordTime=30; MaxSpeechTime=60
 Papagaio_5x | Hidden=no; ManagerMode=F; ParrotEnable=yes; ParrotRepeatCount=5; ParrotMaxRecordTime=30; ParrotStartStopEnable=yes; MaxSpeechTime=60
 ```
 
-> **Note:** `AccessInfoMode=Always` must be set for welcome messages (`noticeset`) to be delivered regardless of access list configuration. The default `Original` only sends the message when an access list is active for the room.
+> **Note:** `AccessInfoMode=Always` must be set for welcome messages (`noticeset`) to be delivered to clients in rooms without an active access list.
 
 ---
 
