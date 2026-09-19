@@ -232,37 +232,211 @@ DataDir=/usr/src/FRNServer/
 
 ### networks.cfg
 
-Each line defines a room:
+Each line defines a room. Format:
 
 ```
-RoomName | option1=value; option2=value
+RoomName | option1=value; option2=value; option3=value
 ```
 
-Common options:
+Lines starting with `#` are comments. Room names must be in UTF-8.
 
-| Option | Values | Description |
-|--------|--------|-------------|
-| `Hidden` | `yes`/`no` | Hide room from public listing |
-| `OwnerEMail` | email | Room owner e-mail |
-| `ManagerMode` | `F`, `FRN`, etc. | Manager authentication mode for this room |
-| `MaxSpeechTime` | seconds | Maximum transmission time |
-| `ParrotEnable` | `yes`/`no` | Enable parrot (echo) mode |
-| `ParrotStartStopEnable` | `yes`/`no` | Allow users to start/stop parrot via `start`/`stop` text commands |
-| `ParrotRepeatCount` | number | Times to repeat audio in parrot mode |
-| `ParrotMaxRecordTime` | seconds | Maximum parrot recording time |
-| `AccessInfoMode` | `Always`, `Original` | When to send the welcome message |
+---
 
-Example:
+#### Complete parameter reference
+
+**n.1 — `Hidden`**
+Controls whether the room appears in the public room list sent to clients.
+Values: `yes` / `no` (default: `no`)
 
 ```
-Brazil    | Hidden=no; OwnerEMail=your@email.com; AccessInfoMode=Always
-Teste     | Hidden=yes; OwnerEMail=your@email.com; ManagerMode=F; AccessInfoMode=Always
-FRN       | Hidden=no; ManagerMode=F; AccessInfoMode=Always
-XLXBRA    | Hidden=no; ManagerMode=F; AccessInfoMode=Always
-Papagaio  | Hidden=no; ManagerMode=F; ParrotEnable=yes; ParrotStartStopEnable=yes; ParrotMaxRecordTime=30; MaxSpeechTime=60
+Brazil | Hidden=no
+Whrebe | Hidden=yes
 ```
 
-> **`AccessInfoMode=Always`** must be set for welcome messages (`noticeset`) to be delivered regardless of access list configuration. The default `Original` only sends the message when an access list is active for the room.
+---
+
+**n.2 — `OwnerEMail`**
+E-mail of the room owner. A client connecting with this e-mail and the correct password receives room owner privileges (`AL=OWNER` in the handshake). If omitted, the server's `ServerOwnerEMail` applies.
+
+```
+Brazil | OwnerEMail=your@email.com
+```
+
+---
+
+**n.3 — `MaxSpeechTime`**
+Maximum duration of a single transmission in seconds for this room. Overrides the server-wide `MaxSpeechTime` from `server.ini`.
+Min: 10s — Max: 1800s (30 min) — Default: uses server-wide value (300s)
+
+```
+Papagaio | MaxSpeechTime=60
+```
+
+---
+
+**n.4 — `ManagerMode`**
+Authentication mode with the FRN System Manager for this specific room. Overrides the server-wide `ManagerMode`.
+
+| Value | Description |
+|-------|-------------|
+| `Standalone` or `S` | No interaction with manager. Fully autonomous. |
+| `Notify` or `N` | Server notifies manager of connecting clients, but negative responses are ignored. |
+| `Light` or `L` | If manager is unavailable, client is allowed in. When manager recovers, client is checked and may be kicked. |
+| `FRN` or `F` | If manager is unavailable, no clients are allowed. If available, client is checked against manager response. |
+
+```
+FRN    | ManagerMode=F
+Brazil | ManagerMode=FRN
+Teste  | ManagerMode=Standalone
+```
+
+---
+
+**n.5 — `ParrotEnable`**
+Enables parrot (echo/repeater) mode for the room. Audio received is played back to all connected clients.
+Values: `yes` / `no` (default: `no`)
+
+```
+Papagaio | ParrotEnable=yes
+```
+
+---
+
+**n.6 — `ParrotStartStopEnable`**
+Allows users to activate and deactivate parrot mode by sending the text commands `start` and `stop` in the room.
+Values: `yes` / `no` (default: `no`)
+Requires: `ParrotEnable=yes`
+
+```
+Papagaio | ParrotEnable=yes; ParrotStartStopEnable=yes
+```
+
+---
+
+**n.7 — `ParrotMaxRecordTime`**
+Maximum recording time in seconds for each parrot cycle.
+Default: uses server-wide `MaxSpeechTime`
+
+```
+Papagaio | ParrotMaxRecordTime=30
+```
+
+---
+
+**n.8 — `ParrotRepeatCount`**
+Number of times the parrot replays the recorded audio before accepting new input.
+Default: `1`
+
+```
+Papagaio_5x | ParrotRepeatCount=5
+```
+
+---
+
+**n.9 — `MaxClients`**
+Maximum number of clients simultaneously connected to this room.
+Default: no limit
+
+```
+Brazil | MaxClients=20
+```
+
+---
+
+**n.10 — `CharsetName`**
+ANSI charset name for this specific room, used when sending the room name to legacy clients that do not support Unicode. Overrides the server-wide `ServerCharsetName`.
+Example for Portuguese/Latin: `ISO-8859-1`
+
+```
+Brazil | CharsetName=ISO-8859-1
+```
+
+---
+
+**n.11 — `AccessInfoMode`**
+Controls when the room's welcome message (`noticeset`) is sent to connecting clients.
+
+| Value | Description |
+|-------|-------------|
+| `Original` | Sends the welcome message only when an access list (`rights.dat`) is active for the room. Default. |
+| `Always` | Always sends the welcome message on connection, regardless of access list. |
+| `Never` | Never sends the welcome message. |
+
+> **Important:** Set `AccessInfoMode=Always` for `noticeset` messages to work in rooms without access list restrictions.
+
+```
+Brazil | AccessInfoMode=Always
+Teste  | AccessInfoMode=Always
+```
+
+---
+
+**n.12 — `QuarantineTime`**
+Delay in milliseconds between a client's TCP connection and its appearance in the connected clients list. Useful to avoid flickering in the client list caused by system manager probe connections.
+Default: uses server-wide `QuarantineTime` (0)
+
+```
+Brazil | QuarantineTime=500
+```
+
+---
+
+**n.13 — `SpeechPause`**
+Mandatory pause in milliseconds between transmissions in this room. Prevents back-to-back keying.
+Min: 0ms — Max: 10000ms (10s) — Default: uses server-wide value (0)
+
+```
+Brazil | SpeechPause=1000
+```
+
+---
+
+**n.14 — `SpeechLimit`**
+Enable or disable the maximum speech time limit for this room. Overrides the server-wide `SpeechLimit`.
+Values: `yes` / `no` — Default: `yes`
+
+```
+Papagaio | SpeechLimit=yes
+```
+
+---
+
+**n.15 — `ClientSessionMaxTime`**
+Maximum duration of a client session in seconds before the client is disconnected and must reconnect. Overrides the server-wide `ClientSessionMaxTime`.
+Default: `0` (no limit). Accepts time suffixes: `s` (seconds), `m` (minutes), `h` (hours), `d` (days), `y` (years).
+
+```
+Brazil | ClientSessionMaxTime=1d
+Teste  | ClientSessionMaxTime=0
+```
+
+---
+
+**n.16 — `ShortFrames`**
+Enable or disable support for short 40ms audio frames in this room. Overrides the server-wide `ShortFrames`.
+Values: `yes` / `no` — Default: `yes`
+
+```
+Brazil | ShortFrames=yes
+```
+
+---
+
+#### Full example — networks.cfg
+
+```
+# National names MUST be UTF-8
+
+Brazil     | Hidden=no; OwnerEMail=your@email.com; AccessInfoMode=Always
+Teste      | Hidden=yes; OwnerEMail=your@email.com; ManagerMode=F; AccessInfoMode=Always
+FRN        | Hidden=no; ManagerMode=F; AccessInfoMode=Always
+XLXBRA     | Hidden=no; ManagerMode=F; AccessInfoMode=Always
+Whrebe     | Hidden=yes; ManagerMode=F; OwnerEMail=your@email.com
+Papagaio   | Hidden=no; ManagerMode=F; ParrotEnable=yes; ParrotStartStopEnable=yes; ParrotMaxRecordTime=30; MaxSpeechTime=60
+Papagaio_5x | Hidden=no; ManagerMode=F; ParrotEnable=yes; ParrotRepeatCount=5; ParrotMaxRecordTime=30; ParrotStartStopEnable=yes; MaxSpeechTime=60
+```
+
+> **Note:** `AccessInfoMode=Always` must be set for welcome messages (`noticeset`) to be delivered regardless of access list configuration. The default `Original` only sends the message when an access list is active for the room.
 
 ---
 
